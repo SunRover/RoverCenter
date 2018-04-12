@@ -14,5 +14,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/opencv-windows-x86_64.jar"/>
 	<classpathentry kind="lib" path="lib/javacv-windows-x86_64.jar"/>
+	<classpathentry kind="lib" path="lib/RoverTools.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
