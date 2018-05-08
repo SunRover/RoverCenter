@@ -26,6 +26,7 @@ public class StringCommServer extends Thread implements DataSource {
 	boolean good;
 	
 	public StringCommServer(int port) {
+		iopack = new IOStreamPack();
 		server = new Server(port, iopack);
 	}
 	
@@ -89,6 +90,8 @@ public class StringCommServer extends Thread implements DataSource {
 			
 			in = new BufferedReader(new InputStreamReader(iopack.getInputStream()));
 			out = new PrintWriter(iopack.getOutputStream());
+			
+			
 		}
 	}
 

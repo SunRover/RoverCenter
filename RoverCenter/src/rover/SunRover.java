@@ -24,13 +24,13 @@ public class SunRover {
 	
 	public SunRover() {
 		dh = new DataHandler();
-		mc = new MotorController();
+		//mc = new MotorController();
 		sc = new ServoController("COM4");
 		sm = new ServoMotorController("COM5");
 		commserver = new StringCommServer(1300);
 		driver = new DirectionDriver(dh);
 		ws = new WebcamServer(WEBCAM_PORT);
-		sa = new ServerAudioHandler(AUDIO_PORT);
+		//sa = new ServerAudioHandler(AUDIO_PORT);
 		boolean done = false;
 		
 		dh.addSource(commserver);
@@ -54,7 +54,7 @@ public class SunRover {
 			if (commserver.isGood()) {
 				input = commserver.readLine();
 				
-				System.out.println(input);
+				System.out.println("SUNROVER: Recieved \"" + input + "\"");
 				
 				if (input != null) {
 					dh.pushData(DataHandler.DTYPE_COMMANDERSTRING, input);
