@@ -16,17 +16,20 @@ public class MotorController implements DataReciever{
 	public static final int FOR_RIGHT = 1;
 	public static final int BACK_LEFT = 2;
 	public static final int BACK_RIGHT = 3;
-	private static final int[] REQUESTED_DATA = {DataHandler.DTYPE_MOTORVALS};
+	private static final String[] REQUESTED_DATA = {"DTYPE_MOTORVALS"};
 
 	SerialConnection forward= null, backward = null;
 	boolean good = true;
 	
 	//Setup the serial controllers
 	public MotorController() {
-		final String[] comports = {"COM1", "COM2", "COM3", "COM4", "COM5"};
+		final String[] comports = {"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9"};
 		
 		//Try to find serial connections
 		for (String port : comports) {
+			if (forward != null && backward != null)
+				break;
+			
 			//Make connection
 			SerialConnection s = new SerialConnection(port, 9600, 8, 1, 0);
 			//Wait a sec
@@ -56,6 +59,9 @@ public class MotorController implements DataReciever{
 				else if (backward == null && new String(id).equals("backward")) {
 					backward = s;
 					System.out.println("Backward connected");
+				}
+				else {
+					s.close();
 				}
 			}
 		}
@@ -119,12 +125,12 @@ public class MotorController implements DataReciever{
 		return forward.close() && backward.close();
 	}
 
-	public int[] getDataTypes() {
+	public String[] getDataTypes() {
 		return REQUESTED_DATA;
 	}
 
-	public void recieveData(int type, Object data) {
-		if (type == DataHandler.DTYPE_MOTORVALS) {
+	public void recieveData(String type, Object data) {
+		if (type.equals("DTYPE_MOTORVALS")) {
 			byte[][] motorvals = (byte[][]) data;
 			setMotors(motorvals[0][0], motorvals[0][1], motorvals[1][0], motorvals[1][1]);
 		}

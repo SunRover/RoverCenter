@@ -54,7 +54,7 @@ public class DirectionDriver extends Driver{
 				sendServoVals(0, 1800);
 			}
 			else if (s.equals("SERVO_DOWN")) {
-				sendServoVals(0, 200);
+				sendServoVals(0, 1000);
 			}
 		}
 		

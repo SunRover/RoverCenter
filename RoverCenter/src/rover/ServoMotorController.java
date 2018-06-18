@@ -6,7 +6,7 @@ import tools.DataHandler;
 import tools.DataReciever;
 
 public class ServoMotorController implements DataReciever {
-	private static final int[] REQUEST_DATATYPES = {DataHandler.DYTPE_SERVOMOTORVALS};
+	private static final String[] REQUEST_DATATYPES = {"DYTPE_SERVOMOTORVALS"};
 	private SerialConnection bricktronics;
 	private boolean good;
 	
@@ -35,13 +35,13 @@ public class ServoMotorController implements DataReciever {
 	}
 	
 	@Override
-	public int[] getDataTypes() {
+	public String[] getDataTypes() {
 		return REQUEST_DATATYPES;
 	}
 
 	@Override
-	public void recieveData(int type, Object data) {
-		if (type == DataHandler.DYTPE_SERVOMOTORVALS) {
+	public void recieveData(String type, Object data) {
+		if (type.equals("DYTPE_SERVOMOTORVALS")) {
 			int speed = (Integer) data;
 			setSpeed(speed);
 		}

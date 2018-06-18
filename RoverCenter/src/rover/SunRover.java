@@ -7,11 +7,14 @@ package rover;
 import rover.comms.ServerAudioHandler;
 import rover.comms.WebcamServer;
 import tools.DataHandler;
+import tools.DataReciever;
 
-public class SunRover {
+public class SunRover implements DataReciever {
 	public static final int CONTROL_PORT = 1300;
 	public static final int WEBCAM_PORT = 1301;
 	public static final int AUDIO_PORT = 1302;
+	
+	private static final String[] REQUESTED_DATA = {"DTYPE_COMMANDERSTRING"};
 	
 	DataHandler dh;
 	MotorController mc;
@@ -21,17 +24,17 @@ public class SunRover {
 	Driver driver;
 	WebcamServer ws;
 	ServerAudioHandler sa;
+	boolean done = false;
 	
 	public SunRover() {
 		dh = new DataHandler();
-		//mc = new MotorController();
-		sc = new ServoController("COM4");
-		sm = new ServoMotorController("COM5");
-		commserver = new StringCommServer(1300);
+		mc = new MotorController();
+		sc = new ServoController("COM7");
+		sm = new ServoMotorController("COM8");
+		commserver = new StringCommServer(1300, dh);
 		driver = new DirectionDriver(dh);
 		ws = new WebcamServer(WEBCAM_PORT);
-		//sa = new ServerAudioHandler(AUDIO_PORT);
-		boolean done = false;
+		sa = new ServerAudioHandler(AUDIO_PORT);
 		
 		dh.addSource(commserver);
 		dh.addSource(driver);
@@ -40,26 +43,16 @@ public class SunRover {
 		dh.addReciever(sc);
 		dh.addReciever(sm);
 		
-		commserver.start();
-		
+		if (mc.isGood())
+			System.out.println("Connected to arduino motorcontrollers");
 		if (sc.isGood())
 			System.out.println("Connected to maestro");
 		if (sm.isGood())
 			System.out.println("Connected to servomotor controller");
 		
+		commserver.start();
 		
 		while (!done) {
-			String input;
-			
-			if (commserver.isGood()) {
-				input = commserver.readLine();
-				
-				System.out.println("SUNROVER: Recieved \"" + input + "\"");
-				
-				if (input != null) {
-					dh.pushData(DataHandler.DTYPE_COMMANDERSTRING, input);
-				}
-			}
 		}
 		
 		System.out.print("Closing");
@@ -70,5 +63,19 @@ public class SunRover {
 	
 	public static void main(String[] args) {		
 		new SunRover();
+	}
+
+	@Override
+	public String[] getDataTypes() {
+		return REQUESTED_DATA;
+	}
+
+	@Override
+	public void recieveData(String type, Object data) {
+		if (type.equals("DTYPE_COMMANDERSTRING")) {
+			if (data.equals("q")) {
+				done = true;
+			}
+		}
 	}
 }

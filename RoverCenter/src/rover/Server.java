@@ -20,9 +20,9 @@ public class Server implements Runnable, StateHolder {
 		
 	ServerSocket serversocket;
 	Socket clientsocket;
-	IOStreamPack iopack;
+	volatile IOStreamPack iopack;
 	List<StateListener> statelisteners = new ArrayList<StateListener>();
-	boolean good = false;
+	volatile boolean good = false;
 	
 	public Server(int port, IOStreamPack iopack) {
 		//Try to open a port and wait until connected
@@ -41,6 +41,7 @@ public class Server implements Runnable, StateHolder {
 	
 	//State of connection
 	public boolean isGood() {
+		System.out.println(good);
 		return good;
 	}
 	
@@ -78,8 +79,10 @@ public class Server implements Runnable, StateHolder {
 		if (good != state) {
 			good = state;
 		
-			for (StateListener listener: statelisteners)
+			for (StateListener listener: statelisteners) {
+				System.out.println("State change");
 				listener.updateState(isGood());
+			}
 		}
 	}
 	
