@@ -46,7 +46,7 @@
 <dependency>
 <groupId>com.github.SunRover</groupId>
 <artifactId>RoverTools</artifactId>
-<version>9b65bd3a410d696b1cd1e1cbe7f4bf25a552df6e</version>
+<version>master-0.0.1-gad3e8fa-2</version>
 </dependency>
 <dependency>
     <groupId>org.bytedeco</groupId>

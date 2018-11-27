@@ -15,7 +15,7 @@ import tools.IOStreamPack;
 
 public class StringCommServer extends Thread implements DataSource {
 	
-	private static final int[] OFFERED_TYPES = {DataHandler.DTYPE_COMMANDERSTRING};
+	private static final String[] OFFERED_TYPES = {DataTypes.DTYPE_COMMANDERSTRING};
 	
 	Server server;
 	PrintWriter out;
@@ -65,7 +65,7 @@ public class StringCommServer extends Thread implements DataSource {
 		return line;
 	}
 	
-	public int[] getOfferedDataTypes() {
+	public String[] getOfferedDataTypes() {
 		return OFFERED_TYPES;
 	}
 	

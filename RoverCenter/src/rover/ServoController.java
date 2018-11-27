@@ -10,7 +10,7 @@ public class ServoController implements DataReciever {
 	public static final int SERVO_SETTARGET = 0;
 	public static final int SERVO_GETMOVINGSTATE = 1;
 	
-	private static final int[] REQUESTED_DATA = {DataHandler.DTYPE_SERVOVALS};
+	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_SERVOVALS};
 	
 	SerialConnection maestro;	//Connection to Polulu Mini-Maestro
 	boolean good = false;	//State of connection
@@ -71,11 +71,11 @@ public class ServoController implements DataReciever {
 	}
 	
 	//Give data to receive
-	public int[] getDataTypes() {
+	public String[] getDataTypes() {
 		return REQUESTED_DATA;
 	}
 
-	public void recieveData(int type, Object data) {
+	public void recieveData(String type, Object data) {
 		int[] vals = (int[]) data;
 		
 		//vals[0] = SERVO_GETMOVINGSTATE;

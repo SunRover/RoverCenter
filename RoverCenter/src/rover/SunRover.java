@@ -4,6 +4,8 @@
 
 package rover;
 
+import java.util.Scanner;
+
 import rover.comms.ServerAudioHandler;
 import rover.comms.WebcamServer;
 import tools.DataHandler;
@@ -22,44 +24,49 @@ public class SunRover {
 	WebcamServer ws;
 	ServerAudioHandler sa;
 	
+	Scanner stdin = new Scanner(System.in);
+	
 	public SunRover() {
 		dh = new DataHandler();
-		mc = new MotorController();
-		sc = new ServoController("COM4");
-		sm = new ServoMotorController("COM5");
+		//mc = new MotorController();
+		sc = new ServoController("/dev/ttyACM0");
+		//sm = new ServoMotorController("COM5");
 		commserver = new StringCommServer(1300);
 		driver = new DirectionDriver(dh);
-		ws = new WebcamServer(WEBCAM_PORT);
-		sa = new ServerAudioHandler(AUDIO_PORT);
+		//ws = new WebcamServer(WEBCAM_PORT);
+		//sa = new ServerAudioHandler(AUDIO_PORT);
 		boolean done = false;
 		
 		dh.addSource(commserver);
 		dh.addSource(driver);
 		dh.addReciever(driver);
-		dh.addReciever(mc);
+		//dh.addReciever(mc);
 		dh.addReciever(sc);
-		dh.addReciever(sm);
+		//dh.addReciever(sm);
 		
 		commserver.start();
 		
+		
 		if (sc.isGood())
 			System.out.println("Connected to maestro");
+		/*
 		if (sm.isGood())
 			System.out.println("Connected to servomotor controller");
-		
+		*/
 		
 		while (!done) {
 			String input;
 			
-			if (commserver.isGood()) {
-				input = commserver.readLine();
+			//if (commserver.isGood()) {
+				//input = commserver.readLine();
+				input = stdin.nextLine();
 				
 				System.out.println(input);
 				
 				if (input != null) {
-					dh.pushData(DataHandler.DTYPE_COMMANDERSTRING, input);
+					dh.pushData(DataTypes.DTYPE_COMMANDERSTRING, input);
 				}
-			}
+			//}
 		}
 		
 		System.out.print("Closing");

@@ -16,7 +16,7 @@ public class MotorController implements DataReciever{
 	public static final int FOR_RIGHT = 1;
 	public static final int BACK_LEFT = 2;
 	public static final int BACK_RIGHT = 3;
-	private static final int[] REQUESTED_DATA = {DataHandler.DTYPE_MOTORVALS};
+	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_MOTORVALS};
 
 	SerialConnection forward= null, backward = null;
 	boolean good = true;
@@ -119,12 +119,12 @@ public class MotorController implements DataReciever{
 		return forward.close() && backward.close();
 	}
 
-	public int[] getDataTypes() {
+	public String[] getDataTypes() {
 		return REQUESTED_DATA;
 	}
 
-	public void recieveData(int type, Object data) {
-		if (type == DataHandler.DTYPE_MOTORVALS) {
+	public void recieveData(String type, Object data) {
+		if (type == DataTypes.DTYPE_MOTORVALS) {
 			byte[][] motorvals = (byte[][]) data;
 			setMotors(motorvals[0][0], motorvals[0][1], motorvals[1][0], motorvals[1][1]);
 		}
