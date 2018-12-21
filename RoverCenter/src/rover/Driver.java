@@ -1,5 +1,6 @@
 /*Driver
- * Interface to take in data and gives motor controll instructions
+ * Abstract class that passes motor controller instructions
+ * TODO: Add basic emergency functionality for manual control to abstract driver so it is present in all drivers
  */
 
 package rover;
@@ -8,19 +9,13 @@ import tools.DataHandler;
 import tools.DataReciever;
 import tools.DataSource;
 
-public class Driver implements DataReciever, DataSource{
-	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING};
+public abstract class Driver implements DataSource, DataReciever {
 	private static final String[] OFFERED_DATA = {DataTypes.DTYPE_MOTORVALS, DataTypes.DTYPE_SERVOVALS, DataTypes.DYTPE_SERVOMOTORVALS};
 	
 	private DataHandler datahandler;
 		
 	public Driver(DataHandler dh) {
 		datahandler = dh;
-	}
-	
-	//Process a command
-	protected void inputCommand(String command) {
-		
 	}
 	
 	//Put out values for movement motors
@@ -43,17 +38,6 @@ public class Driver implements DataReciever, DataSource{
 		if (speed < 256 && speed > -256) {
 			datahandler.pushData(DataTypes.DYTPE_SERVOMOTORVALS, speed);
 		}
-	}
-
-	//Request data
-	public String[] getDataTypes() {
-		return REQUESTED_DATA;
-	}
-
-	//Take in data
-	public void recieveData(String type, Object data) {
-		if (type == DataTypes.DTYPE_COMMANDERSTRING)
-			inputCommand((String) data);
 	}
 
 	public String[] getOfferedDataTypes() {

@@ -8,7 +8,9 @@ import java.util.Arrays;
 
 import tools.DataHandler;
 
-public class DirectionDriver extends Driver{
+public class DirectionDriver extends Driver {
+	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING};
+	
 	byte[][] command = new byte[2][2];
 	
 	public DirectionDriver(DataHandler dh) {
@@ -68,4 +70,15 @@ public class DirectionDriver extends Driver{
 		}
 	}
 	
+	//Request data
+	public String[] getDataTypes() {
+		return REQUESTED_DATA;
+	}
+	
+	//Take in data
+	public void recieveData(String type, Object data) {
+		if (type == DataTypes.DTYPE_COMMANDERSTRING)
+			inputCommand((String) data);
+	}
+
 }
