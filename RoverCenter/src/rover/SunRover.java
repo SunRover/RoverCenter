@@ -33,12 +33,12 @@ public class SunRover implements DataReciever {
 	
 	public SunRover() {
 		dh = new DataHandler();
-		//mc = new MotorController();
+		mc = new MotorController();
 		//sc = new ServoController("/dev/ttyACM0");
 		//sm = new ServoMotorController("COM5");
 		commserver = new StringCommServer(1300, dh);
 		driver = new FloorDriver(dh);
-		//ws = new WebcamServer(WEBCAM_PORT);
+		ws = new WebcamServer(WEBCAM_PORT);
 		//sa = new ServerAudioHandler(AUDIO_PORT);
 		wc = new WebcamController(dh);
 		boolean done = false;
@@ -47,16 +47,17 @@ public class SunRover implements DataReciever {
 		dh.addSource(wc);
 		dh.addSource(driver);
 		dh.addReciever(driver);
-		//dh.addReciever(mc);
+		dh.addReciever(mc);
 		//dh.addReciever(sc);
 		//dh.addReciever(sm);
 		dh.addReciever(new DummyMotorController());
 		
 		commserver.start();
 		
-		/*
+		
 		if (mc.isGood())
 			System.out.println("Connected to arduino motorcontrollers");
+		/*ss
 		if (sc.isGood())
 			System.out.println("Connected to maestro");
 		if (sm.isGood())

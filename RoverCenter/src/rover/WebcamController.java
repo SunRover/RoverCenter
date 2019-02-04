@@ -11,7 +11,7 @@ public class WebcamController implements Runnable, DataSource {
 	private static final String[] OFFERED_DATA = {DataTypes.DTYPE_WEBCAMIMAGE0, DataTypes.DTYPE_WEBCAMIMAGE1};
 	
 	DataHandler dh;
-	FrameGrabber grabber0 = new OpenCVFrameGrabber(0);
+	FrameGrabber grabber0 = new OpenCVFrameGrabber(1);
 	//FrameGrabber grabber1 = new OpenCVFrameGrabber(1);
 	Frame frame0, frame1;
 	boolean active = true;

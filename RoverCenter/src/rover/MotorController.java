@@ -23,7 +23,7 @@ public class MotorController implements DataReciever{
 	
 	//Setup the serial controllers
 	public MotorController() {
-		final String[] comports = {"COM1", "COM2", "COM3", "COM4", "COM5"};
+		final String[] comports = {"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9"};
 		
 		//Try to find serial connections
 		for (String port : comports) {

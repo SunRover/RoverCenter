@@ -102,7 +102,7 @@ public class FloorDriver extends Driver implements Runnable {
             CvPoint pt2  = new CvPoint(line).position(1);
             CvPoint s, e;
             
-            //Make line vectors pointing upwards
+            //Make line vectors pointing upwards (note opencv starts counting y from top)
             if (pt1.y() > pt2.y()) {
             	s = pt1;
             	e = pt2;
@@ -112,11 +112,11 @@ public class FloorDriver extends Driver implements Runnable {
             	e = pt1;
             }
             
-            float ydiff = e.y()-s.y();
-            float deviance = (e.x()-s.x())/ydiff;
+            float xdiff = e.x()-s.x();
+            float tandev = (s.y()-e.y())/xdiff;	//Tangent of deviation angle from horizontal
             
-            
-            if (Math.abs(deviance) > 0.5) {
+            //Remove extremes
+            if (Math.abs(tandev) > 0.5) {
             	cvSeqRemove(lines, i);
             	i--;
             }
@@ -127,19 +127,24 @@ public class FloorDriver extends Driver implements Runnable {
                 System.out.println("\t pt2: " + pt2);*/
                 cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 3, CV_AA, 0); // draw the segment on the image
                 
-                sum_deviance += deviance;
+                sum_deviance += tandev;
             }
         }
         
         float correction = -sum_deviance/lines.total();
         
-        if (correction < 0) {
+        if (lines.total() == 0) {
         	command[0][0] = (byte) 127;
-        	command[0][1] = (byte) (127+correction*10);
+        	command[0][1] = command[0][0];
+        	command[1] = command[0];
+        }
+        else if (correction > 0) {
+        	command[0][0] = (byte) 127;
+        	command[0][1] = (byte) (127-correction*500);
         	command[1] = command[0];
         }
         else {
-        	command[0][0] = (byte) (127-correction*10);
+        	command[0][0] = (byte) (127+correction*500);
         	command[0][1] = (byte) 127;
         	command[1] = command[0];
         }
