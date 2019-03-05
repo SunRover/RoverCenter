@@ -36,13 +36,17 @@ public class LineDriver extends Driver implements Runnable {
 	float targetavgxint = -1;
 	
 	List<List<CvPoint>> linegroups = new ArrayList<List<CvPoint>>();
+	List<CvPoint> vertGroundLines = new ArrayList<CvPoint>();
+	List<CvPoint> oldVertGroundLines = new ArrayList<CvPoint>();
 	
 	public LineDriver(DataHandler dh) {
 		super(dh);
 		
+		/*
 		for (int i = 0; i < NUMGROUPS; i++) {
 			linegroups.add(new ArrayList<CvPoint>());
 		}
+		*/
 		
 		Thread t = new Thread(this);
 		t.start();
@@ -110,8 +114,8 @@ public class LineDriver extends Driver implements Runnable {
         float sum_deviance = 0;
         float sumxint = 0;
         
-        for (int i = 0; i < lines.total(); i++) {
-            Pointer line = cvGetSeqElem(lines, i);
+        for (int li = 0; li < lines.total(); li++) {
+            Pointer line = cvGetSeqElem(lines, li);
             CvPoint pt1  = new CvPoint(line).position(0);
             CvPoint pt2  = new CvPoint(line).position(1);
             CvPoint s, e;
@@ -131,8 +135,8 @@ public class LineDriver extends Driver implements Runnable {
             
             //Remove extremes
             if (Math.abs(tandev) > 0.5) {
-            	cvSeqRemove(lines, i);
-            	i--;
+            	cvSeqRemove(lines, li);
+            	li--;
             }
             else {
             	/*
@@ -144,18 +148,75 @@ public class LineDriver extends Driver implements Runnable {
                 sum_deviance += tandev;
                 
                 //Find x-intercepts
-                float xint = (e.x()+(e.y()*tandev));
-                sumxint += xint;
+                CvPoint xint = new CvPoint();
+                xint.x((int) (e.x()+(e.y()*tandev)));
+                xint.y(0);
+                cvCircle(colorDst, xint, 10, CV_RGB(255, 0, 0));
+                
+                //Sort lines
+                boolean sorted = false;
+                for (List<CvPoint> group : linegroups) {
+                	if (Math.abs(group.get(0).x() - xint.x()) < 10) {
+                		group.add(xint);
+                		sorted = true;
+                	}
+                }
+                
+                //If part of new group, place in order left to right in linegroups list
+                if (!sorted) {
+                	List<CvPoint> newgroup = new ArrayList<CvPoint>();
+                	newgroup.add(xint);
+                	int i;
+                	for (i = 0; i < linegroups.size(); i++) {
+                		if (xint.x() < linegroups.get(i).get(0).x())
+                			linegroups.add(i, newgroup);
+                	}
+                	linegroups.add(i, newgroup);
+                }
+                
+                //linegroups.get(NUMGROUPS*(int)((xint.x()-1)/dst.width())).add(xint);
             }
         }
         
-        float correction = -sum_deviance/lines.total();
-        float avgxint = sumxint/lines.total();
-        float xintcorrection = targetavgxint - avgxint;        
+        
+        //If can't see anything don't do anything
         if (lines.total() == 0) {
-               	//Do nothing
+           	//Do nothing
+        	return;
         }
-        else if (targetavgxint == -1) {
+        
+        //Consolidate line groups into lines
+        for (List<CvPoint> linegroup : linegroups) {
+        	CvPoint avgline = new CvPoint();
+        	for (CvPoint line : linegroup) {
+        		avgline.x(avgline.x()+line.x());
+        	}
+        	avgline.x(avgline.x()/linegroup.size());
+        	vertGroundLines.add(avgline);
+        }
+        
+        //Map lines onto old lines and find difference
+        float offset = 0;
+        int nummatches = 0;
+        for (CvPoint line : vertGroundLines) {
+        	for (CvPoint oldline : oldVertGroundLines) {
+        		float diff = line.x() - oldline.x();
+        		if (diff < 100) {
+        			offset += diff;
+        			nummatches++;
+        		}
+        	}
+        }
+        offset /= nummatches;
+        
+        System.out.println("LD: Offset " + offset);
+        
+        float correction = -sum_deviance/lines.total();
+        
+        float avgxint = sumxint/lines.total();
+        float xintcorrection = targetavgxint - avgxint;
+        
+        if (targetavgxint == -1) {
         	targetavgxint = avgxint;
         }
         else if (xintcorrection > 0) {
