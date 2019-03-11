@@ -194,6 +194,7 @@ public class LineDriver extends Driver implements Runnable {
         	}
         	avgline.x(avgline.x()/linegroup.size());
         	vertGroundLines.add(avgline);
+            cvCircle(colorDst, avgline, 10, CV_RGB(0, 255, 0));
         }
         
         //Map lines onto old lines and find difference
@@ -210,10 +211,12 @@ public class LineDriver extends Driver implements Runnable {
         }
         offset /= nummatches;
         
-        if (oldVertGroundLines == null)
-        	oldVertGroundLines = vertGroundLines;
+        if (oldVertGroundLines.size() == 0 && vertGroundLines.size() > 0)
+        	for (CvPoint line : vertGroundLines)
+        		oldVertGroundLines.add(line);
         
-        if (offset != 0)
+        //System.out.println("LD: " + vertGroundLines.size());
+        if (offset != 0 && nummatches != 0)
         	System.out.println("LD: Offset " + offset);
         
         float correction = -sum_deviance/lines.total();
@@ -224,13 +227,13 @@ public class LineDriver extends Driver implements Runnable {
         if (targetavgxint == -1) {
         	targetavgxint = avgxint;
         }
-        else if (xintcorrection > 0) {
+        else if (offset > 0) {
         	command[0][0] = (byte) 127;
-        	command[0][1] = (byte) (127-xintcorrection);
+        	command[0][1] = (byte) (127-offset);
         	command[1] = command[0];
         }
         else {
-        	command[0][0] = (byte) (127+xintcorrection);
+        	command[0][0] = (byte) (127+offset);
         	command[0][1] = (byte) 127;
         	command[1] = command[0];
         }
@@ -238,5 +241,8 @@ public class LineDriver extends Driver implements Runnable {
         hough.showImage(iplConverter.convert(colorDst));
         
         sendMotorVals(command);
+        
+        vertGroundLines.clear();
+        linegroups.clear();
 	}
 }
