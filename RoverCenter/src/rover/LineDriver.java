@@ -156,7 +156,7 @@ public class LineDriver extends Driver implements Runnable {
                 //Sort lines
                 boolean sorted = false;
                 for (List<CvPoint> group : linegroups) {
-                	if (Math.abs(group.get(0).x() - xint.x()) < 10) {
+                	if (Math.abs(group.get(0).x() - xint.x()) < 50) {
                 		group.add(xint);
                 		sorted = true;
                 	}
@@ -166,12 +166,13 @@ public class LineDriver extends Driver implements Runnable {
                 if (!sorted) {
                 	List<CvPoint> newgroup = new ArrayList<CvPoint>();
                 	newgroup.add(xint);
+                	/*
                 	int i;
                 	for (i = 0; i < linegroups.size(); i++) {
                 		if (xint.x() < linegroups.get(i).get(0).x())
                 			linegroups.add(i, newgroup);
-                	}
-                	linegroups.add(i, newgroup);
+                	}*/
+                	linegroups.add(newgroup);
                 }
                 
                 //linegroups.get(NUMGROUPS*(int)((xint.x()-1)/dst.width())).add(xint);
@@ -201,7 +202,7 @@ public class LineDriver extends Driver implements Runnable {
         for (CvPoint line : vertGroundLines) {
         	for (CvPoint oldline : oldVertGroundLines) {
         		float diff = line.x() - oldline.x();
-        		if (diff < 100) {
+        		if (Math.abs(diff) < 100) {
         			offset += diff;
         			nummatches++;
         		}
@@ -209,7 +210,11 @@ public class LineDriver extends Driver implements Runnable {
         }
         offset /= nummatches;
         
-        System.out.println("LD: Offset " + offset);
+        if (oldVertGroundLines == null)
+        	oldVertGroundLines = vertGroundLines;
+        
+        if (offset != 0)
+        	System.out.println("LD: Offset " + offset);
         
         float correction = -sum_deviance/lines.total();
         

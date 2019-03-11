@@ -33,11 +33,11 @@ public class SunRover implements DataReciever {
 	
 	public SunRover() {
 		dh = new DataHandler();
-		mc = new MotorController();
+		//mc = new MotorController();
 		//sc = new ServoController("/dev/ttyACM0");
 		//sm = new ServoMotorController("COM5");
 		commserver = new StringCommServer(1300, dh);
-		driver = new FloorDriver(dh);
+		driver = new LineDriver(dh);
 		ws = new WebcamServer(WEBCAM_PORT);
 		//sa = new ServerAudioHandler(AUDIO_PORT);
 		wc = new WebcamController(dh);
