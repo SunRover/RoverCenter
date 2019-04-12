@@ -4,40 +4,40 @@
 
 package rover;
 
-import static org.bytedeco.javacpp.helper.opencv_core.CV_RGB;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-
-import org.bytedeco.javacpp.*;
-import org.bytedeco.javacpp.opencv_core.*;
-import org.bytedeco.javacv.CanvasFrame;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.highgui.HighGui;
 
 import tools.DataHandler;
 import tools.DataReciever;
+import tools.ImgWindow;
 
 public class LineDriver extends Driver implements Runnable {
 	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING, DataTypes.DTYPE_WEBCAMIMAGE0};
-	private static final int NUMGROUPS   = 5;
+	private static final int MAXGROUPS = 5;
+	private static final int EMPTYGROUP = -1000;
 	
 	boolean active = true;
-	Frame lastframe = null;
-	IplImage src, dst, colorDst;
-    OpenCVFrameConverter.ToIplImage iplConverter = new OpenCVFrameConverter.ToIplImage();
-    CvMemStorage storage = cvCreateMemStorage(0);
-    CvSeq lines;
-    CanvasFrame hough = new CanvasFrame("Hough");
+	boolean needToProcess = false;
+	Mat lastframe = null;
+	Mat preprocess = new Mat();
+	Mat lines = new Mat();
 	byte[][] command = new byte[2][2];
 	float targetavgxint = -1;
 	
-	List<List<CvPoint>> linegroups = new ArrayList<List<CvPoint>>();
-	List<CvPoint> vertGroundLines = new ArrayList<CvPoint>();
-	List<CvPoint> oldVertGroundLines = new ArrayList<CvPoint>();
+	Point pt1 = new Point(), pt2 = new Point();
+	
+	int[] vertLines = new int[MAXGROUPS];		//Max 10 different vertical groups of lines in picture
+	int[] oldVertLines = new int[MAXGROUPS];	//Vertical line groups from last frame
+	
+	Scalar linecolor = new Scalar(255, 0, 0);	//Draw red lines
 	
 	public LineDriver(DataHandler dh) {
 		super(dh);
@@ -47,6 +47,9 @@ public class LineDriver extends Driver implements Runnable {
 			linegroups.add(new ArrayList<CvPoint>());
 		}
 		*/
+		
+		clearArray(vertLines);
+		clearArray(oldVertLines);
 		
 		Thread t = new Thread(this);
 		t.start();
@@ -69,12 +72,10 @@ public class LineDriver extends Driver implements Runnable {
 			}
 		}
 		
-		else if (arg0.equals(DataTypes.DTYPE_WEBCAMIMAGE0)) {
-			Frame f = (Frame) arg1;
-			if (lastframe == null) {
-				initializeOpenCV(f);
-			}
+		else if (arg0.equals(DataTypes.DTYPE_WEBCAMIMAGE1)) {
+			Mat f = (Mat) arg1;
 			lastframe = f;
+			needToProcess = true;
 		}
 	}
 
@@ -82,20 +83,14 @@ public class LineDriver extends Driver implements Runnable {
 	public void run() {
 		System.out.println("Running");
 		while (true) {
-			if (active) {
+			if (active && needToProcess) {
 				processFrame(lastframe);
+				needToProcess = false;
 			}
 		}
 	}
-
-	private void initializeOpenCV(Frame f) {
-		src = iplConverter.convert(f);
-		
-		dst = cvCreateImage(cvGetSize(src), src.depth(), 1);
-        colorDst = cvCreateImage(cvGetSize(src), src.depth(), 3);
-	}
 	
-	private void processFrame(Frame frame) {
+	private void processFrame(Mat frame) {
 		//System.out.println("Processing frame");
 		
 		if (frame == null) {
@@ -103,79 +98,68 @@ public class LineDriver extends Driver implements Runnable {
 			return;
 		}
 		
-		src = iplConverter.convert(frame);
-		
-		cvCanny(src, dst, 50, 200, 3);
-        cvCvtColor(dst, colorDst, CV_GRAY2BGR);
+		//Preprocess image (color -> grayscale -> blur -> canny edge)
+		Imgproc.cvtColor(frame, preprocess, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.blur(preprocess, preprocess, new Size(3, 3));
+		Imgproc.Canny(preprocess, preprocess, 50, 200);
         
-        //Probabilistic Hough Transform
-        lines = cvHoughLines2(dst, storage, CV_HOUGH_PROBABILISTIC, 1, Math.PI / 180, 150, 100, 150, 0, CV_PI);
+        //Perform Probabilistic Hough Transform
+        Imgproc.HoughLinesP(preprocess, lines, 1, Math.PI / 180, 150, 100, 10);
         
+        
+        //Process each detected line
         float sum_deviance = 0;
         float sumxint = 0;
         
-        for (int li = 0; li < lines.total(); li++) {
-            Pointer line = cvGetSeqElem(lines, li);
-            CvPoint pt1  = new CvPoint(line).position(0);
-            CvPoint pt2  = new CvPoint(line).position(1);
-            CvPoint s, e;
+        for (int li = 0; li < lines.cols(); li++) {
+        	double[] line = lines.get(0, li);
+        	
+        	//Put data into points
+        	pt1.x = line[0]; pt1.y = line[1];
+        	pt2.x = line[3]; pt2.y = line[4];        	
             
             //Make line vectors pointing upwards (note opencv starts counting y from top)
-            if (pt1.y() > pt2.y()) {
-            	s = pt1;
-            	e = pt2;
-            }
-            else {
-            	s = pt2;
-            	e = pt1;
+            if (pt1.y < pt2.y) {
+            	pt1 = pt2;
+            	pt2 = pt1;
             }
             
-            float xdiff = e.x()-s.x();
-            float tandev = xdiff == 0? 0 : xdiff/(s.y()-e.y());	//Tangent of deviation angle from vertical
+            double xdiff = pt2.x-pt1.x; double ydiff = pt1.y - pt2.y;
+            double tandev = xdiff/ydiff;	//Tangent of deviation angle from vertical (heading)
             
             //Remove extremes
-            if (Math.abs(tandev) > 0.5) {
-            	cvSeqRemove(lines, li);
-            	li--;
+            if (Math.abs(tandev) > 1) {
+            	
             }
             else {
             	/*
                 System.out.println("Line spotted: ");
                 System.out.println("\t pt1: " + pt1);
                 System.out.println("\t pt2: " + pt2);*/
-                cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 3, CV_AA, 0); // draw the segment on the image
+                Imgproc.line(preprocess, pt1, pt2, linecolor, 2); // draw the segment on the image
                 
                 sum_deviance += tandev;
                 
-                //Find x-intercepts
-                CvPoint xint = new CvPoint();
-                xint.x((int) (e.x()+(e.y()*tandev)));
-                xint.y(0);
-                cvCircle(colorDst, xint, 10, CV_RGB(255, 0, 0));
+                //Find x intercept of line with top of screen
+                int xint  = ((int) (pt2.x + (pt2.y*tandev)));
                 
-                //Sort lines
+                //Match line to vertical group, else make new group
                 boolean sorted = false;
-                for (List<CvPoint> group : linegroups) {
-                	if (Math.abs(group.get(0).x() - xint.x()) < 50) {
-                		group.add(xint);
+                for (int group = 0; group < MAXGROUPS; group++) {
+                	if (Math.abs(vertLines[group] - xint) < 50) {
                 		sorted = true;
                 	}
                 }
                 
-                //If part of new group, place in order left to right in linegroups list
+                //If line does not fit in group, add to new group
                 if (!sorted) {
-                	List<CvPoint> newgroup = new ArrayList<CvPoint>();
-                	newgroup.add(xint);
-                	/*
-                	int i;
-                	for (i = 0; i < linegroups.size(); i++) {
-                		if (xint.x() < linegroups.get(i).get(0).x())
-                			linegroups.add(i, newgroup);
-                	}*/
-                	linegroups.add(newgroup);
+                	int groupnum = 0;
+                	while (vertLines[groupnum] != EMPTYGROUP) {
+                		groupnum++;
+                	}
+                	if (groupnum < MAXGROUPS)
+                		vertLines[groupnum] = xint;
                 }
-                
-                //linegroups.get(NUMGROUPS*(int)((xint.x()-1)/dst.width())).add(xint);
             }
         }
         
@@ -186,23 +170,17 @@ public class LineDriver extends Driver implements Runnable {
         	return;
         }
         
-        //Consolidate line groups into lines
-        for (List<CvPoint> linegroup : linegroups) {
-        	CvPoint avgline = new CvPoint();
-        	for (CvPoint line : linegroup) {
-        		avgline.x(avgline.x()+line.x());
-        	}
-        	avgline.x(avgline.x()/linegroup.size());
-        	vertGroundLines.add(avgline);
-            cvCircle(colorDst, avgline, 10, CV_RGB(0, 255, 0));
-        }
-        
         //Map lines onto old lines and find difference
         float offset = 0;
         int nummatches = 0;
-        for (CvPoint line : vertGroundLines) {
-        	for (CvPoint oldline : oldVertGroundLines) {
-        		float diff = line.x() - oldline.x();
+        for (double line : vertLines) {
+        	if (line == EMPTYGROUP)
+        		continue;
+        	for (double oldline : oldVertLines) {
+        		if (oldline == EMPTYGROUP)
+        			continue;
+        		
+        		double diff = line - oldline;
         		if (Math.abs(diff) < 100) {
         			offset += diff;
         			nummatches++;
@@ -211,9 +189,12 @@ public class LineDriver extends Driver implements Runnable {
         }
         offset /= nummatches;
         
-        if (oldVertGroundLines.size() == 0 && vertGroundLines.size() > 0)
-        	for (CvPoint line : vertGroundLines)
-        		oldVertGroundLines.add(line);
+        
+        //Reset groups
+        int[] temp = oldVertLines;
+        oldVertLines = vertLines;
+        vertLines = temp;
+        clearArray(vertLines);
         
         //System.out.println("LD: " + vertGroundLines.size());
         if (offset != 0 && nummatches != 0)
@@ -238,11 +219,17 @@ public class LineDriver extends Driver implements Runnable {
         	command[1] = command[0];
         }
         
-        hough.showImage(iplConverter.convert(colorDst));
         
+        //Display preprocessed image with the vertical lines drawn onto it
+        HighGui.imshow("Line Driver", preprocess);
+        
+        //Send command to steer
         sendMotorVals(command);
-        
-        vertGroundLines.clear();
-        linegroups.clear();
+	}
+	
+	/*Overwrite array with EMPTYGROUP values (for use with line groups)*/
+	private void clearArray(int[] arr) {
+		for (int i = 0; i < arr.length; i++)
+			arr[i] = EMPTYGROUP;
 	}
 }

@@ -31,12 +31,7 @@
 <dependency>
     <groupId>org.openpnp</groupId>
     <artifactId>opencv</artifactId>
-    <version>2.4.13-0</version>
-</dependency>
-<dependency>
-    <groupId>org.openpnp</groupId>
-    <artifactId>opencv</artifactId>
-    <version>3.2.0-1</version>
+    <version>3.4.2-1</version>
 </dependency>
 <dependency>
     <groupId>org.scream3r</groupId>
@@ -46,7 +41,7 @@
 <dependency>
 	<groupId>com.github.SunRover</groupId>
 	<artifactId>RoverTools</artifactId>
-	<version>d62b717c6d</version>
+	<version>5d4cda64ab2c10e6cb5de73e1a543bca8da5aae5</version>
 </dependency>
 <dependency>
     <groupId>org.bytedeco</groupId>
