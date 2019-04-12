@@ -229,11 +229,11 @@ public class LineDriver extends Driver implements Runnable {
         }
         else if (offset > 0) {
         	command[0][0] = (byte) 127;
-        	command[0][1] = (byte) (127-offset);
+        	command[0][1] = (byte) (127-offset*10);
         	command[1] = command[0];
         }
         else {
-        	command[0][0] = (byte) (127+offset);
+        	command[0][0] = (byte) (127+offset*10);
         	command[0][1] = (byte) 127;
         	command[1] = command[0];
         }
