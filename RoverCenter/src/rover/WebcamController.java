@@ -7,6 +7,7 @@ import static java.util.concurrent.TimeUnit.*;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.OpenCVFrameGrabber;
+import org.opencv.core.Mat;
 
 import tools.DataHandler;
 import tools.DataSource;
@@ -25,9 +26,9 @@ public class WebcamController implements DataSource {
 		executor.scheduleAtFixedRate(floorcam, 1000, 500, MILLISECONDS);
 	}
 
-	public void inputFrame(int webcamnum, Frame frame) {
-		if (webcamnum == 0) {
-			dh.pushData(DataTypes.DTYPE_WEBCAMIMAGE0, frame);
+	public void inputFrame(int webcamnum, Mat frame) {
+		if (webcamnum == 1) {
+			dh.pushData(DataTypes.DTYPE_WEBCAMIMAGE1, frame);
 		}
 	}
 	

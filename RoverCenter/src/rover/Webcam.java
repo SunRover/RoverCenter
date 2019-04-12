@@ -1,41 +1,29 @@
 package rover;
 
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.FrameGrabber.Exception;
-import org.bytedeco.javacv.OpenCVFrameGrabber;
-
-import tools.DataHandler;
-import tools.DataSource;
+import org.opencv.core.Mat;
+import org.opencv.videoio.VideoCapture;
 
 public class Webcam implements Runnable {	
 	WebcamController wc;
-	FrameGrabber grabber0 = new OpenCVFrameGrabber(1);
-	//FrameGrabber grabber1 = new OpenCVFrameGrabber(1);
-	Frame frame0, frame1;
+	VideoCapture vcapture1;
+	Mat frame1;
 	boolean active = true;
 	
 	public Webcam(WebcamController wc) {
 		this.wc = wc;
-		try {
-			grabber0.start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		vcapture1 = new VideoCapture(1);
 	}
 
 	@Override
 	public void run() {
-		try {
-			frame0 = grabber0.grab();
-		} catch (org.bytedeco.javacv.FrameGrabber.Exception e1) {
-			e1.printStackTrace();
+		if (active && vcapture1.isOpened()) {
+			vcapture1.read(frame1);
+			
+			if (frame1 != null) {
+					wc.inputFrame(1, frame1);
+			}
 		}
-		//frame1 = grabber1.grab();
-		if (frame0 != null) {
-			wc.inputFrame(0, frame0);
-		}
-		
+
+		else wc.inputFrame(0, null);
 	}
-	
 }
