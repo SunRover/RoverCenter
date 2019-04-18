@@ -20,12 +20,12 @@ import tools.DataReciever;
 import tools.ImgWindow;
 
 public class LineDriver extends Driver implements Runnable {
-	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING, DataTypes.DTYPE_WEBCAMIMAGE0};
+	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING, DataTypes.DTYPE_WEBCAMIMAGE1};
 	private static final int MAXGROUPS = 5;
 	private static final int EMPTYGROUP = -1000;
 	
 	boolean active = true;
-	boolean needToProcess = false;
+	volatile boolean needToProcess = false;
 	Mat lastframe = null;
 	Mat preprocess = new Mat();
 	Mat lines = new Mat();
@@ -37,7 +37,7 @@ public class LineDriver extends Driver implements Runnable {
 	int[] vertLines = new int[MAXGROUPS];		//Max 10 different vertical groups of lines in picture
 	int[] oldVertLines = new int[MAXGROUPS];	//Vertical line groups from last frame
 	
-	Scalar linecolor = new Scalar(255, 0, 0);	//Draw red lines
+	Scalar linecolor = new Scalar(100, 255, 100);	//Draw red lines
 	
 	public LineDriver(DataHandler dh) {
 		super(dh);
@@ -50,6 +50,8 @@ public class LineDriver extends Driver implements Runnable {
 		
 		clearArray(vertLines);
 		clearArray(oldVertLines);
+		
+		HighGui.namedWindow("LineDriver");
 		
 		Thread t = new Thread(this);
 		t.start();
@@ -73,6 +75,7 @@ public class LineDriver extends Driver implements Runnable {
 		}
 		
 		else if (arg0.equals(DataTypes.DTYPE_WEBCAMIMAGE1)) {
+			System.out.println("Got Frame");
 			Mat f = (Mat) arg1;
 			lastframe = f;
 			needToProcess = true;
@@ -82,61 +85,66 @@ public class LineDriver extends Driver implements Runnable {
 	@Override
 	public void run() {
 		System.out.println("Running");
-		while (true) {
-			if (active && needToProcess) {
-				processFrame(lastframe);
+		while (active) {
+			if (needToProcess) {
 				needToProcess = false;
+				processFrame(lastframe);
 			}
 		}
 	}
 	
 	private void processFrame(Mat frame) {
-		//System.out.println("Processing frame");
+		System.out.println("Processing frame");
+		
+		System.out.println("Need to process is: " + needToProcess);
 		
 		if (frame == null) {
 			System.out.println("Frame null");
 			return;
 		}
 		
-		//Preprocess image (color -> grayscale -> blur -> canny edge)
+		//Preprocess image (color -> grayscale -> canny edge)
 		Imgproc.cvtColor(frame, preprocess, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.blur(preprocess, preprocess, new Size(3, 3));
-		Imgproc.Canny(preprocess, preprocess, 50, 200);
+		//Imgproc.blur(preprocess, preprocess, new Size(2, 2));
+		Imgproc.Canny(preprocess, preprocess, 40, 70, 3, true);
         
         //Perform Probabilistic Hough Transform
-        Imgproc.HoughLinesP(preprocess, lines, 1, Math.PI / 180, 150, 100, 10);
-        
+        Imgproc.HoughLinesP(preprocess, lines, 1, Math.PI / 180, 100, 50, 10);
         
         //Process each detected line
         float sum_deviance = 0;
         float sumxint = 0;
         
-        for (int li = 0; li < lines.cols(); li++) {
-        	double[] line = lines.get(0, li);
+        System.out.println(lines.cols());
+        
+        for (int li = 0; li < lines.rows(); li++) {
+        	double[] line = lines.get(li, 0);
         	
         	//Put data into points
         	pt1.x = line[0]; pt1.y = line[1];
-        	pt2.x = line[3]; pt2.y = line[4];        	
+        	pt2.x = line[2]; pt2.y = line[3];   	
             
             //Make line vectors pointing upwards (note opencv starts counting y from top)
             if (pt1.y < pt2.y) {
+            	Point temp = pt1;
             	pt1 = pt2;
-            	pt2 = pt1;
+            	pt2 = temp;
             }
             
             double xdiff = pt2.x-pt1.x; double ydiff = pt1.y - pt2.y;
             double tandev = xdiff/ydiff;	//Tangent of deviation angle from vertical (heading)
+            
+            Imgproc.line(preprocess, pt1, pt2, linecolor, 2); // draw the segment on the image
             
             //Remove extremes
             if (Math.abs(tandev) > 1) {
             	
             }
             else {
-            	/*
+            	
                 System.out.println("Line spotted: ");
                 System.out.println("\t pt1: " + pt1);
-                System.out.println("\t pt2: " + pt2);*/
-                Imgproc.line(preprocess, pt1, pt2, linecolor, 2); // draw the segment on the image
+                System.out.println("\t pt2: " + pt2);
                 
                 sum_deviance += tandev;
                 
@@ -154,11 +162,12 @@ public class LineDriver extends Driver implements Runnable {
                 //If line does not fit in group, add to new group
                 if (!sorted) {
                 	int groupnum = 0;
-                	while (vertLines[groupnum] != EMPTYGROUP) {
-                		groupnum++;
+                	while (groupnum < MAXGROUPS) {
+                		if (vertLines[groupnum] == EMPTYGROUP)
+                			vertLines[groupnum] = xint;
+                		else
+                			groupnum++;
                 	}
-                	if (groupnum < MAXGROUPS)
-                		vertLines[groupnum] = xint;
                 }
             }
         }
@@ -197,34 +206,36 @@ public class LineDriver extends Driver implements Runnable {
         clearArray(vertLines);
         
         //System.out.println("LD: " + vertGroundLines.size());
-        if (offset != 0 && nummatches != 0)
+        if (nummatches != 0) {
         	System.out.println("LD: Offset " + offset);
         
-        float correction = -sum_deviance/lines.total();
-        
-        float avgxint = sumxint/lines.total();
-        float xintcorrection = targetavgxint - avgxint;
-        
-        if (targetavgxint == -1) {
-        	targetavgxint = avgxint;
+	        float correction = -sum_deviance/lines.total();
+	        
+	        float avgxint = sumxint/lines.total();
+	        float xintcorrection = targetavgxint - avgxint;
+	        
+	        if (targetavgxint == -1) {
+	        	targetavgxint = avgxint;
+	        }
+	        else if (offset > 0) {
+	        	command[0][0] = (byte) 127;
+	        	command[0][1] = (byte) (127-offset*3);
+	        	command[1] = command[0];
+	        }
+	        else {
+	        	command[0][0] = (byte) (127+offset*3);
+	        	command[0][1] = (byte) 127;
+	        	command[1] = command[0];
+	        }
+	        
+	        //Send command to steer
+	        sendMotorVals(command);
         }
-        else if (offset > 0) {
-        	command[0][0] = (byte) 127;
-        	command[0][1] = (byte) (127-offset*10);
-        	command[1] = command[0];
-        }
-        else {
-        	command[0][0] = (byte) (127+offset*10);
-        	command[0][1] = (byte) 127;
-        	command[1] = command[0];
-        }
-        
-        
+	        
         //Display preprocessed image with the vertical lines drawn onto it
-        HighGui.imshow("Line Driver", preprocess);
-        
-        //Send command to steer
-        sendMotorVals(command);
+        HighGui.imshow("LineDriver", preprocess);
+        HighGui.waitKey(50);
+        System.out.println("Displaying");
 	}
 	
 	/*Overwrite array with EMPTYGROUP values (for use with line groups)*/

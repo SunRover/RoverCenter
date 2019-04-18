@@ -22,7 +22,7 @@ public class MotorController implements DataReciever{
 	boolean good = true;
 	
 	//Setup the serial controllers
-	public MotorController() {
+	public MotorController(DataHandler dh) {
 		final String[] comports = {"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9"};
 		
 		//Try to find serial connections
@@ -63,6 +63,8 @@ public class MotorController implements DataReciever{
 		if (forward == null || backward == null) {
 			good = false;
 		}
+		
+		dh.addReciever(this);
 	}
 	
 	//State of motor controller
@@ -124,9 +126,11 @@ public class MotorController implements DataReciever{
 	}
 
 	public void recieveData(String type, Object data) {
+		System.out.println("MC: Recieved data");
 		if (type == DataTypes.DTYPE_MOTORVALS) {
 			byte[][] motorvals = (byte[][]) data;
 			setMotors(motorvals[0][0], motorvals[0][1], motorvals[1][0], motorvals[1][1]);
+			System.out.println("Writing motor vals");
 		}
 	}
 	

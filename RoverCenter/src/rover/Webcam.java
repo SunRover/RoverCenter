@@ -6,7 +6,7 @@ import org.opencv.videoio.VideoCapture;
 public class Webcam implements Runnable {	
 	WebcamController wc;
 	VideoCapture vcapture1;
-	Mat frame1;
+	Mat frame1 = new Mat();
 	boolean active = true;
 	
 	public Webcam(WebcamController wc) {
@@ -22,8 +22,13 @@ public class Webcam implements Runnable {
 			if (frame1 != null) {
 					wc.inputFrame(1, frame1);
 			}
+			else {
+				System.out.println("Frame read null");
+			}
 		}
 
-		else wc.inputFrame(0, null);
+		else {
+			System.out.println("Webcam unconnected");
+		}
 	}
 }

@@ -9,7 +9,6 @@ import java.util.Scanner;
 import org.opencv.core.Core;
 
 import rover.comms.ServerAudioHandler;
-import rover.comms.WebcamServer;
 import tools.DataHandler;
 import tools.DataReciever;
 
@@ -26,7 +25,7 @@ public class SunRover implements DataReciever {
 	ServoMotorController sm;
 	StringCommServer commserver;
 	Driver driver;
-	WebcamServer ws;
+	//WebcamServer ws;
 	ServerAudioHandler sa;
 	WebcamController wc;
 	boolean done = false;
@@ -37,12 +36,12 @@ public class SunRover implements DataReciever {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		
 		dh = new DataHandler();
-		//mc = new MotorController();
+		mc = new MotorController(dh);
 		//sc = new ServoController("/dev/ttyACM0");
 		//sm = new ServoMotorController("COM5");
 		commserver = new StringCommServer(1300, dh);
 		driver = new LineDriver(dh);
-		ws = new WebcamServer(WEBCAM_PORT);
+		//ws = new WebcamServer(WEBCAM_PORT);
 		//sa = new ServerAudioHandler(AUDIO_PORT);
 		wc = new WebcamController(dh);
 		boolean done = false;
@@ -51,9 +50,9 @@ public class SunRover implements DataReciever {
 		dh.addSource(wc);
 		dh.addSource(driver);
 		dh.addReciever(driver);
-		//dh.addReciever(mc);
 		//dh.addReciever(sc);
 		//dh.addReciever(sm);
+		dh.addReciever(mc);
 		dh.addReciever(new DummyMotorController());
 		
 		commserver.start();

@@ -28,11 +28,7 @@
     <artifactId>jinput</artifactId>
     <version>2.0.7</version>
 </dependency>
-<dependency>
-    <groupId>org.openpnp</groupId>
-    <artifactId>opencv</artifactId>
-    <version>3.4.2-1</version>
-</dependency>
+
 <dependency>
     <groupId>org.scream3r</groupId>
     <artifactId>jssc</artifactId>
@@ -42,17 +38,6 @@
 	<groupId>com.github.SunRover</groupId>
 	<artifactId>RoverTools</artifactId>
 	<version>5d4cda64ab2c10e6cb5de73e1a543bca8da5aae5</version>
-</dependency>
-<dependency>
-    <groupId>org.bytedeco</groupId>
-    <artifactId>javacpp</artifactId>
-    <version>1.2.2</version>
-</dependency>
-<!-- https://mvnrepository.com/artifact/org.bytedeco/javacv -->
-<dependency>
-    <groupId>org.bytedeco</groupId>
-    <artifactId>javacv-platform</artifactId>
-    <version>1.4.1</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-pool2 -->
