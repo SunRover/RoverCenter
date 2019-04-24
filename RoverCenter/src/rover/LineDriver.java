@@ -4,20 +4,13 @@
 
 package rover;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.highgui.HighGui;
 
 import tools.DataHandler;
-import tools.DataReciever;
-import tools.ImgWindow;
 
 public class LineDriver extends Driver implements Runnable {
 	private static final String[] REQUESTED_DATA = {DataTypes.DTYPE_COMMANDERSTRING, DataTypes.DTYPE_WEBCAMIMAGE1};
@@ -31,6 +24,8 @@ public class LineDriver extends Driver implements Runnable {
 	Mat lines = new Mat();
 	byte[][] command = new byte[2][2];
 	float targetavgxint = -1;
+	boolean needSetReference = true;
+	int numLines;
 	
 	Point pt1 = new Point(), pt2 = new Point();
 	
@@ -117,6 +112,8 @@ public class LineDriver extends Driver implements Runnable {
         
         System.out.println(lines.cols());
         
+        numLines = 0;	//Number of vertical lines detected (not number of line groups)
+        
         for (int li = 0; li < lines.rows(); li++) {
         	double[] line = lines.get(li, 0);
         	
@@ -135,26 +132,28 @@ public class LineDriver extends Driver implements Runnable {
             double tandev = xdiff/ydiff;	//Tangent of deviation angle from vertical (heading)
             
             Imgproc.line(preprocess, pt1, pt2, linecolor, 2); // draw the segment on the image
-            
+                        
             //Remove extremes
-            if (Math.abs(tandev) > 1) {
-            	
-            }
-            else {
-            	
+            if (Math.abs(tandev) < 1) {
+            	/*
                 System.out.println("Line spotted: ");
                 System.out.println("\t pt1: " + pt1);
                 System.out.println("\t pt2: " + pt2);
+                */
                 
                 sum_deviance += tandev;
+                
+                numLines++;
                 
                 //Find x intercept of line with top of screen
                 int xint  = ((int) (pt2.x + (pt2.y*tandev)));
                 
+                System.out.println("Line spotted with intercept: " + xint);
+                
                 //Match line to vertical group, else make new group
                 boolean sorted = false;
                 for (int group = 0; group < MAXGROUPS; group++) {
-                	if (Math.abs(vertLines[group] - xint) < 50) {
+                	if (Math.abs(vertLines[group] - xint) < 25) {
                 		sorted = true;
                 	}
                 }
@@ -198,22 +197,31 @@ public class LineDriver extends Driver implements Runnable {
         }
         offset /= nummatches;
         
-        
+        /*
         //Reset groups
         int[] temp = oldVertLines;
         oldVertLines = vertLines;
         vertLines = temp;
+        clearArray(vertLines);*/
+        
+        if (needSetReference) {
+        	System.arraycopy(vertLines, 0, oldVertLines, 0, MAXGROUPS);
+        	needSetReference = false;
+        }
+        
         clearArray(vertLines);
         
         //System.out.println("LD: " + vertGroundLines.size());
-        if (nummatches != 0) {
+        if (numLines != 0) {
         	System.out.println("LD: Offset " + offset);
         
-	        float correction = -sum_deviance/lines.total();
+	        float headingcorrection = (float) (-Math.atan(sum_deviance/numLines));
 	        
 	        float avgxint = sumxint/lines.total();
 	        float xintcorrection = targetavgxint - avgxint;
 	        
+	        System.out.println("Heading correction: "+ headingcorrection);
+	        /*
 	        if (targetavgxint == -1) {
 	        	targetavgxint = avgxint;
 	        }
@@ -225,6 +233,23 @@ public class LineDriver extends Driver implements Runnable {
 	        else {
 	        	command[0][0] = (byte) (127+offset*3);
 	        	command[0][1] = (byte) 127;
+	        	command[1] = command[0];
+	        }
+	        */
+	        
+	        if (headingcorrection == 0) {
+	        	command[0][0] = (byte) (127);
+	        	command[0][1] = (byte) 127;
+	        	command[1] = command[0];
+	        }
+	        else if (headingcorrection < 0) {
+	        	command[0][0] = (byte) 0; // (127+headingcorrection*100);
+	        	command[0][1] = (byte) 127;
+	        	command[1] = command[0];
+	        }
+	        else if (headingcorrection > 0) {
+	        	command[0][1] = (byte) 0; // (127-headingcorrection*100);
+	        	command[0][0] = (byte) 127;
 	        	command[1] = command[0];
 	        }
 	        

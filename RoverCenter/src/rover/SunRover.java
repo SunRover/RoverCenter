@@ -46,9 +46,13 @@ public class SunRover implements DataReciever {
 		wc = new WebcamController(dh);
 		boolean done = false;
 
+		
+		//Add sources before receivers
 		dh.addSource(commserver);
 		dh.addSource(wc);
 		dh.addSource(driver);
+		
+		
 		dh.addReciever(driver);
 		//dh.addReciever(sc);
 		//dh.addReciever(sm);
