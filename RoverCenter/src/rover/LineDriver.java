@@ -8,7 +8,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.highgui.HighGui;
+//import org.opencv.highgui.HighGui;
 
 import tools.DataHandler;
 
@@ -46,7 +46,7 @@ public class LineDriver extends Driver implements Runnable {
 		clearArray(vertLines);
 		clearArray(oldVertLines);
 		
-		HighGui.namedWindow("LineDriver");
+		//HighGui.namedWindow("LineDriver");
 		
 		Thread t = new Thread(this);
 		t.start();
@@ -258,8 +258,8 @@ public class LineDriver extends Driver implements Runnable {
         }
 	        
         //Display preprocessed image with the vertical lines drawn onto it
-        HighGui.imshow("LineDriver", preprocess);
-        HighGui.waitKey(50);
+        //HighGui.imshow("LineDriver", preprocess);
+        //HighGui.waitKey(50);
         System.out.println("Displaying");
 	}
 	

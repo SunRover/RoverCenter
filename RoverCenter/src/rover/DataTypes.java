@@ -9,4 +9,5 @@ public class DataTypes {
 	public static final String DYTPE_SERVOMOTORVALS = "DYTPE_SERVOMOTORVALS";
 	public static final String DTYPE_WEBCAMIMAGE0 = "DTYPE_WEBCAMIMAGE0";
 	public static final String DTYPE_WEBCAMIMAGE1 = "DTYPE_WEBCAMIMAGE1";
+	public static final String DTYPE_POSITION = "DTYPE_POSITION";
 }
