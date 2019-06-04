@@ -1,5 +1,5 @@
-/*Floor Driver
- * Drives straight based on looking at the floor tiles
+/*Line Driver
+ * Drives straight based on looking at the floor tiles and trying to follow the lines
  */
 
 package rover;

@@ -19,6 +19,7 @@ public class WebcamController implements DataSource {
 	
 	public WebcamController (DataHandler dh) {
 		this.dh = dh;
+		dh.addSource(this);
 		floorcam = new Webcam(this);
 		executor.scheduleAtFixedRate(floorcam, 1000, 500, MILLISECONDS);
 	}
